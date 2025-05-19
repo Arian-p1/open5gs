@@ -200,7 +200,7 @@ int ogs_dict_nextranet_aaa_entry(char *conffile)
       struct dict_cmd_data data = {
         OGS_DIAM_NEXTRANET_AAA_CMD_CODE, /* Code */
         "Nextranet-AAA-Auth-Request", /* Name */
-        CMD_FLAG_REQUEST | CMD_FLAG_PROXIABLE | CMD_FLAG_ERROR, /* Fixed flags */
+        CMD_FLAG_REQUEST | CMD_FLAG_PROXIABLE, /* Fixed flags */
         CMD_FLAG_REQUEST | CMD_FLAG_PROXIABLE /* Fixed flag values */
       };
       CHECK_dict_new(DICT_COMMAND, &data, NULL, &cmd);
@@ -224,7 +224,7 @@ int ogs_dict_nextranet_aaa_entry(char *conffile)
       struct dict_cmd_data data = {
         OGS_DIAM_NEXTRANET_AAA_CMD_CODE, /* Code */
         "Nextranet-AAA-Auth-Answer", /* Name */
-        CMD_FLAG_PROXIABLE | CMD_FLAG_ERROR, /* Fixed flags */
+        CMD_FLAG_PROXIABLE, /* Fixed flags */
         CMD_FLAG_PROXIABLE /* Fixed flag values */
       };
       CHECK_dict_new(DICT_COMMAND, &data, NULL, &cmd);
