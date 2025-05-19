@@ -88,14 +88,12 @@ struct local_rules_definition {
 
 int ogs_dict_nextranet_aaa_entry(char *conffile)
 {
-  struct dict_object * nextranet_vendor;
-  struct dict_vendor_data vendor_data = { OGS_DIAM_NEXTRANET_VENDOR_ID, "Nextranet" };
-  CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_VENDOR, &vendor_data, NULL, &nextranet_vendor));
-
   /* Applications section */
   {
+    struct dict_object * vendor;
+    CHECK_FCT(fd_dict_search(fd_g_config->cnf_dict, DICT_VENDOR, VENDOR_BY_NAME, "Nextranet", &vendor, ENOENT));
     struct dict_application_data app_data = { OGS_DIAM_NEXTRANET_AAA_APPLICATION_ID, "Nextranet-AAA" };
-    CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_APPLICATION, &app_data, nextranet_vendor, NULL));
+    CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_APPLICATION, &app_data, vendor, NULL));
   }
 
   /* Nextranet specific AVP section */
@@ -189,58 +187,6 @@ int ogs_dict_nextranet_aaa_entry(char *conffile)
         AVP_TYPE_OCTETSTRING /* base type of data */
       };
       CHECK_dict_new(DICT_AVP, &data, NULL, NULL);
-    }
-  }
-
-  /* Create commands */
-  {
-    /* Create application object reference */
-    struct dict_object *nextranet_app;
-    CHECK_dict_search(DICT_APPLICATION, APPLICATION_BY_NAME, "Nextranet-AAA", &nextranet_app);
-
-    /* Nextranet-AAA-Auth-Request (NAAR) Command */
-    {
-      struct dict_cmd_data data = {
-        OGS_DIAM_NEXTRANET_AAA_CMD_CODE, /* Code */
-        "Nextranet-AAA-Auth-Request", /* Name */
-        CMD_FLAG_REQUEST, /* Fixed flags */
-        CMD_FLAG_REQUEST /* Fixed flag values */
-      };
-      
-      struct dict_object *cmd;
-      CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_COMMAND, &data, nextranet_app, &cmd));
-
-      /* Add AVPs to command */
-      struct local_rules_definition rules[] =
-      {
-        {  { .avp_vendor = OGS_DIAM_NEXTRANET_VENDOR_ID, .avp_name = "Nextranet-AVP-IMSI" }, RULE_REQUIRED, -1, 1 },
-        {  { .avp_vendor = OGS_DIAM_NEXTRANET_VENDOR_ID, .avp_name = "Nextranet-AVP-IMEI" }, RULE_OPTIONAL, -1, 1 },
-        {  { .avp_vendor = OGS_DIAM_NEXTRANET_VENDOR_ID, .avp_name = "Nextranet-AVP-APN" }, RULE_OPTIONAL, -1, 1 },
-        {  { .avp_vendor = OGS_DIAM_NEXTRANET_VENDOR_ID, .avp_name = "Nextranet-AVP-TAC" }, RULE_OPTIONAL, -1, 1 },
-        {  { .avp_vendor = OGS_DIAM_NEXTRANET_VENDOR_ID, .avp_name = "Nextranet-AVP-CGI" }, RULE_OPTIONAL, -1, 1 },
-        {  { .avp_vendor = OGS_DIAM_NEXTRANET_VENDOR_ID, .avp_name = "Nextranet-AVP-EUCGI" }, RULE_OPTIONAL, -1, 1 }
-      };
-      PARSE_loc_rules(rules, cmd);
-    }
-
-    /* Nextranet-AAA-Auth-Answer Command */
-    {
-      struct dict_cmd_data data = {
-        OGS_DIAM_NEXTRANET_AAA_CMD_CODE, /* Code */
-        "Nextranet-AAA-Auth-Answer", /* Name */
-        0, /* Fixed flags */
-        0 /* Fixed flag values */
-      };
-      
-      struct dict_object *cmd;
-      CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_COMMAND, &data, nextranet_app, &cmd));
-
-      /* Add AVPs to command */
-      struct local_rules_definition rules[] =
-      {
-        {  { .avp_vendor = OGS_DIAM_NEXTRANET_VENDOR_ID, .avp_name = "Nextranet-AVP-Result" }, RULE_REQUIRED, -1, 1 }
-      };
-      PARSE_loc_rules(rules, cmd);
     }
   }
 
