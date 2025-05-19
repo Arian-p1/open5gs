@@ -194,23 +194,21 @@ int ogs_dict_nextranet_aaa_entry(char *conffile)
 
   /* Create commands */
   {
+    /* Create application object reference */
+    struct dict_object *nextranet_app;
+    CHECK_dict_search(DICT_APPLICATION, APPLICATION_BY_NAME, "Nextranet-AAA", &nextranet_app);
+
     /* Nextranet-AAA-Auth-Request (NAAR) Command */
     {
-      struct dict_object * cmd;
       struct dict_cmd_data data = {
         OGS_DIAM_NEXTRANET_AAA_CMD_CODE, /* Code */
         "Nextranet-AAA-Auth-Request", /* Name */
-        CMD_FLAG_REQUEST | CMD_FLAG_PROXIABLE, /* Fixed flags */
+        CMD_FLAG_REQUEST, /* Fixed flags */
         CMD_FLAG_REQUEST /* Fixed flag values */
       };
-
-      /* Find Application ID */
-      struct dict_object * app;
-      struct dict_application_data app_data = { OGS_DIAM_NEXTRANET_AAA_APPLICATION_ID };
-      CHECK_dict_search(DICT_APPLICATION, APPLICATION_BY_ID, &app_data, &app);
       
-      /* Create Command */
-      CHECK_dict_new(DICT_COMMAND, &data, app, &cmd);
+      struct dict_object *cmd;
+      CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_COMMAND, &data, nextranet_app, &cmd));
 
       /* Add AVPs to command */
       struct local_rules_definition rules[] =
@@ -227,21 +225,15 @@ int ogs_dict_nextranet_aaa_entry(char *conffile)
 
     /* Nextranet-AAA-Auth-Answer Command */
     {
-      struct dict_object * cmd;
       struct dict_cmd_data data = {
         OGS_DIAM_NEXTRANET_AAA_CMD_CODE, /* Code */
         "Nextranet-AAA-Auth-Answer", /* Name */
-        CMD_FLAG_PROXIABLE, /* Fixed flags */
+        0, /* Fixed flags */
         0 /* Fixed flag values */
       };
-
-      /* Find Application ID */
-      struct dict_object * app;
-      struct dict_application_data app_data = { OGS_DIAM_NEXTRANET_AAA_APPLICATION_ID };
-      CHECK_dict_search(DICT_APPLICATION, APPLICATION_BY_ID, &app_data, &app);
       
-      /* Create Command */
-      CHECK_dict_new(DICT_COMMAND, &data, app, &cmd);
+      struct dict_object *cmd;
+      CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_COMMAND, &data, nextranet_app, &cmd));
 
       /* Add AVPs to command */
       struct local_rules_definition rules[] =
