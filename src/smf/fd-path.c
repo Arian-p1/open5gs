@@ -45,6 +45,8 @@ int smf_fd_init(void)
     ogs_assert(rv == 0);
     rv = smf_s6b_init();
     ogs_assert(rv == OGS_OK);
+    rv = smf_nextranet_aaa_init();
+    ogs_assert(rv == OGS_OK);
 
     rv = ogs_diam_start();
     ogs_assert(rv == 0);
@@ -64,6 +66,7 @@ void smf_fd_final(void)
     smf_gx_final();
     smf_gy_final();
     smf_s6b_final();
+    smf_nextranet_aaa_final();
 
     ogs_diam_final();
 }

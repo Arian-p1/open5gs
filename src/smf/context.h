@@ -27,6 +27,7 @@
 #include "ogs-diameter-gy.h"
 #include "ogs-diameter-rx.h"
 #include "ogs-diameter-s6b.h"
+#include "ogs-diameter-nextranet-aaa.h"
 #include "ogs-pfcp.h"
 #include "ogs-sbi.h"
 #include "ogs-app.h"
@@ -130,7 +131,7 @@ typedef struct smf_ue_s {
     /* IMEI */
     uint8_t imeisv[OGS_MAX_IMEISV_LEN];
     int imeisv_len;
-    char  imeisv_bcd[OGS_MAX_IMEISV_BCD_LEN+1];
+    char imeisv_bcd[OGS_MAX_IMEISV_BCD_LEN+1];
 
     ogs_list_t sess_list;
 } smf_ue_t;

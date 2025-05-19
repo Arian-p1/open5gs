@@ -37,6 +37,8 @@ int smf_gy_init(void);
 void smf_gy_final(void);
 int smf_s6b_init(void);
 void smf_s6b_final(void);
+int smf_nextranet_aaa_init(void);
+void smf_nextranet_aaa_final(void);
 
 void smf_gx_send_ccr(smf_sess_t *sess, ogs_pool_id_t xact_id,
         uint32_t cc_request_type);

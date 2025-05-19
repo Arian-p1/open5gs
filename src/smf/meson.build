@@ -84,6 +84,7 @@ libsmf_sources = files('''
     gx-path.c
     gy-path.c
     s6b-path.c
+    nextranet-aaa-path.c
     gx-handler.c
     gy-handler.c
     pfcp-path.c
@@ -117,6 +118,7 @@ libsmf = static_library('smf',
                     libdiameter_gx_dep,
                     libdiameter_gy_dep,
                     libdiameter_s6b_dep,
+                    libdiameter_nextranet_aaa_dep,
                     libpfcp_dep],
     install : false)
 
@@ -129,6 +131,7 @@ libsmf_dep = declare_dependency(
                     libdiameter_gx_dep,
                     libdiameter_gy_dep,
                     libdiameter_s6b_dep,
+                    libdiameter_nextranet_aaa_dep,
                     libpfcp_dep])
 
 smf_sources = files('''
