@@ -201,9 +201,16 @@ int ogs_dict_nextranet_aaa_entry(char *conffile)
         OGS_DIAM_NEXTRANET_AAA_CMD_CODE, /* Code */
         "Nextranet-AAA-Auth-Request", /* Name */
         CMD_FLAG_REQUEST | CMD_FLAG_PROXIABLE, /* Fixed flags */
-        CMD_FLAG_REQUEST | CMD_FLAG_PROXIABLE /* Fixed flag values */
+        CMD_FLAG_REQUEST /* Fixed flag values */
       };
-      CHECK_dict_new(DICT_COMMAND, &data, NULL, &cmd);
+
+      /* Find Application ID */
+      struct dict_object * app;
+      struct dict_application_data app_data = { OGS_DIAM_NEXTRANET_AAA_APPLICATION_ID };
+      CHECK_dict_search(DICT_APPLICATION, APPLICATION_BY_ID, &app_data, &app);
+      
+      /* Create Command */
+      CHECK_dict_new(DICT_COMMAND, &data, app, &cmd);
 
       /* Add AVPs to command */
       struct local_rules_definition rules[] =
@@ -225,9 +232,16 @@ int ogs_dict_nextranet_aaa_entry(char *conffile)
         OGS_DIAM_NEXTRANET_AAA_CMD_CODE, /* Code */
         "Nextranet-AAA-Auth-Answer", /* Name */
         CMD_FLAG_PROXIABLE, /* Fixed flags */
-        CMD_FLAG_PROXIABLE /* Fixed flag values */
+        0 /* Fixed flag values */
       };
-      CHECK_dict_new(DICT_COMMAND, &data, NULL, &cmd);
+
+      /* Find Application ID */
+      struct dict_object * app;
+      struct dict_application_data app_data = { OGS_DIAM_NEXTRANET_AAA_APPLICATION_ID };
+      CHECK_dict_search(DICT_APPLICATION, APPLICATION_BY_ID, &app_data, &app);
+      
+      /* Create Command */
+      CHECK_dict_new(DICT_COMMAND, &data, app, &cmd);
 
       /* Add AVPs to command */
       struct local_rules_definition rules[] =
