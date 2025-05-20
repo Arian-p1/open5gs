@@ -64,6 +64,7 @@ typedef struct ogs_diam_nextranet_aaa_message_s {
     ogs_session_data_t session_data;
 } ogs_diam_nextranet_aaa_message_t;
 
+int ogs_dict_nextranet_aaa_entry(char *conffile);
 int ogs_diam_nextranet_aaa_init(void);
 
 #ifdef __cplusplus

@@ -35,8 +35,6 @@ struct dict_object *ogs_diam_nextranet_aaa_tac = NULL;
 struct dict_object *ogs_diam_nextranet_aaa_cgi = NULL;
 struct dict_object *ogs_diam_nextranet_aaa_eucgi = NULL;
 
-extern int ogs_dict_nextranet_aaa_entry(char *conffile);
-
 int ogs_diam_nextranet_aaa_init(void)
 {
     application_id_t id = OGS_DIAM_NEXTRANET_AAA_APPLICATION_ID;

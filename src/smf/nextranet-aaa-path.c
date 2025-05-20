@@ -18,12 +18,20 @@
  */
 
 #include "fd-path.h"
+#include "ogs-diameter-nextranet-aaa.h"
 
 int smf_nextranet_aaa_init(void)
 {
     int rv;
 
+    rv = ogs_dict_nextranet_aaa_entry(NULL);
+    ogs_assert(rv == 0);
+    
     rv = ogs_diam_nextranet_aaa_init();
+    ogs_assert(rv == 0);
+
+    /* Register the Nextranet AAA application with FreeDiameter */
+    rv = fd_disp_app_support(ogs_diam_nextranet_aaa_application, NULL, 1, 0);
     ogs_assert(rv == 0);
 
     return OGS_OK;
