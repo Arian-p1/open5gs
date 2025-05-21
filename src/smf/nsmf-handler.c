@@ -22,6 +22,7 @@
 #include "ngap-path.h"
 #include "pfcp-path.h"
 #include "nsmf-handler.h"
+#include "nextranet-aaa-path.h"
 
 bool smf_nsmf_handle_create_sm_context(
     smf_sess_t *sess, ogs_sbi_stream_t *stream, ogs_sbi_message_t *message)
@@ -373,6 +374,27 @@ bool smf_nsmf_handle_create_sm_context(
     n1smbuf = ogs_pkbuf_copy(n1smbuf);
     ogs_assert(n1smbuf);
     nas_5gs_send_to_gsm(sess, stream, n1smbuf);
+
+    /* 
+     * At this point, the session is already created and initialized.
+     * HARDCODED: Always use aaa-server.localdomain as the host
+     */
+    if (sess->nextranet_aaa_host) {
+        ogs_free(sess->nextranet_aaa_host);
+    }
+    sess->nextranet_aaa_host = ogs_strdup("aaa-server.localdomain");
+    ogs_assert(sess->nextranet_aaa_host);
+
+    ogs_info("[NEXTRANET-AAA-DEBUG] Explicitly triggering authentication with hardcoded host");
+    ogs_info("[NEXTRANET-AAA-DEBUG] IMSI: %s, Host: %s",
+             smf_ue->imsi_bcd, sess->nextranet_aaa_host);
+    
+    /* Trigger the authentication directly */
+    ogs_info("[NEXTRANET-AAA-DEBUG] Calling auth request function");
+    if (smf_nextranet_aaa_send_auth_request(sess) < 0) {
+        ogs_error("[NEXTRANET-AAA-DEBUG] Failed to send AAA auth request - continuing without authentication");
+        /* Continue without crashing - the session will proceed without AAA auth */
+    }
 
     return true;
 }

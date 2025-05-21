@@ -1,0 +1,153 @@
+/* 
+ * Nextranet AAA Dictionary
+ */
+
+/* Header */
+#include <freeDiameter/extension.h>
+
+/* Include the standard dictionary objects */
+#include <freeDiameter/dictionary.h>
+
+/* Vendor ID is Nextranet (custom value) */
+#define VENDOR_NEXTRANET 45001
+
+/* Command codes for Nextranet AAA */
+#define CMD_NEXTRANET_AUTH_REQ 421
+#define CMD_NEXTRANET_AUTH_ANS 421
+
+/* AVP codes */
+#define AVP_NEXTRANET_IMSI      401
+#define AVP_NEXTRANET_IMEI      402
+#define AVP_NEXTRANET_APN       403
+#define AVP_NEXTRANET_RESULT    404
+#define AVP_NEXTRANET_ULI       405
+
+/* Dictionary init function */
+int ogs_dict_nextranet_aaa_entry(char * conffile)
+{
+    struct dict_object * vendor;
+    struct dict_object * application;
+    struct dict_object * cmd;
+    struct dict_cmd_data cmd_data;
+    
+    /* Create the Nextranet vendor */
+    {
+        struct dict_vendor_data vendor_data = { VENDOR_NEXTRANET, "Nextranet" };
+        CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_VENDOR, &vendor_data, NULL, &vendor));
+    }
+    
+    /* Create the Nextranet AAA Application */
+    {
+        struct dict_application_data app_data = { VENDOR_NEXTRANET, "Nextranet-AAA" };
+        CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_APPLICATION, &app_data, NULL, &application));
+    }
+    
+    /* Create Nextranet-specific AVPs */
+    
+    /* Nextranet-IMSI AVP */
+    {
+        struct dict_avp_data data = {
+            AVP_NEXTRANET_IMSI,               /* Code */
+            VENDOR_NEXTRANET,                 /* Vendor */
+            "Nextranet-AVP-IMSI",             /* Name */
+            AVP_FLAG_VENDOR | AVP_FLAG_MANDATORY, /* Fixed flags */
+            AVP_FLAG_VENDOR,                  /* Fixed flag values */
+            AVP_TYPE_OCTETSTRING              /* base type of data */
+        };
+        CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_AVP, &data, NULL, NULL));
+    }
+    
+    /* Nextranet-IMEI AVP */
+    {
+        struct dict_avp_data data = {
+            AVP_NEXTRANET_IMEI,               /* Code */
+            VENDOR_NEXTRANET,                 /* Vendor */
+            "Nextranet-AVP-IMEI",             /* Name */
+            AVP_FLAG_VENDOR | AVP_FLAG_MANDATORY, /* Fixed flags */
+            AVP_FLAG_VENDOR,                  /* Fixed flag values */
+            AVP_TYPE_OCTETSTRING              /* base type of data */
+        };
+        CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_AVP, &data, NULL, NULL));
+    }
+    
+    /* Nextranet-APN AVP */
+    {
+        struct dict_avp_data data = {
+            AVP_NEXTRANET_APN,                /* Code */
+            VENDOR_NEXTRANET,                 /* Vendor */
+            "Nextranet-AVP-APN",              /* Name */
+            AVP_FLAG_VENDOR | AVP_FLAG_MANDATORY, /* Fixed flags */
+            AVP_FLAG_VENDOR,                  /* Fixed flag values */
+            AVP_TYPE_OCTETSTRING              /* base type of data */
+        };
+        CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_AVP, &data, NULL, NULL));
+    }
+    
+    /* Nextranet-Result AVP */
+    {
+        struct dict_avp_data data = {
+            AVP_NEXTRANET_RESULT,             /* Code */
+            VENDOR_NEXTRANET,                 /* Vendor */
+            "Nextranet-AVP-Result",           /* Name */
+            AVP_FLAG_VENDOR | AVP_FLAG_MANDATORY, /* Fixed flags */
+            AVP_FLAG_VENDOR,                  /* Fixed flag values */
+            AVP_TYPE_UNSIGNED32               /* base type of data */
+        };
+        CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_AVP, &data, NULL, NULL));
+    }
+    
+    /* Nextranet-ULI AVP - 3GPP User Location Information */
+    {
+        struct dict_avp_data data = {
+            AVP_NEXTRANET_ULI,                /* Code */
+            VENDOR_NEXTRANET,                 /* Vendor */
+            "Nextranet-AVP-ULI",              /* Name */
+            AVP_FLAG_VENDOR | AVP_FLAG_MANDATORY, /* Fixed flags */
+            AVP_FLAG_VENDOR,                  /* Fixed flag values */
+            AVP_TYPE_OCTETSTRING              /* base type of data */
+        };
+        CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_AVP, &data, NULL, NULL));
+    }
+    
+    /* Define the Nextranet Auth Request command */
+    {
+        cmd_data.cmd_code = CMD_NEXTRANET_AUTH_REQ;
+        cmd_data.cmd_flags = CMD_FLAG_REQUEST | CMD_FLAG_PROXIABLE;
+        cmd_data.cmd_name = "Nextranet-Authentication-Request";
+        
+        CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_COMMAND, &cmd_data, application, &cmd));
+    }
+    
+    /* Define the Nextranet Auth Answer command */
+    {
+        cmd_data.cmd_code = CMD_NEXTRANET_AUTH_REQ;
+        cmd_data.cmd_flags = CMD_FLAG_PROXIABLE;
+        cmd_data.cmd_name = "Nextranet-Authentication-Answer";
+        
+        CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_COMMAND, &cmd_data, application, &cmd));
+    }
+    
+    return 0;
+}
+
+/* The function called when the extension is loaded */
+int fd_ext_init(int major, int minor, char *conffile)
+{
+    /* Check if the API version matches */
+    if (FD_IS_VERSION_COMPAT(major, minor) == 0) {
+        TRACE_ERROR("Incompatible version of freeDiameter framework (%d.%d)",
+                     major, minor);
+        return EINVAL;
+    }
+    
+    /* Initialize the dictionary */
+    CHECK_FCT(ogs_dict_nextranet_aaa_entry(conffile));
+    
+    return 0;
+}
+
+/* Cleanup function */
+void fd_ext_fini(void)
+{
+    /* No specific cleanup needed */
+} 

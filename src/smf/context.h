@@ -70,6 +70,9 @@ typedef struct smf_context_s {
     const char*         diam_conf_path;   /* SMF Diameter conf path */
     ogs_diam_config_t   *diam_config;     /* SMF Diameter config */
 
+    /* Nextranet AAA configuration */
+    const char*         nextranet_aaa_host;   /* Nextranet AAA host */
+
 #define MAX_NUM_OF_DNS              2
     const char      *dns[MAX_NUM_OF_DNS];
     const char      *dns6[MAX_NUM_OF_DNS];
@@ -242,6 +245,7 @@ typedef struct smf_sess_s {
         uint32_t gy_cca_term_err; /* Gy CCA RXed error code */
         bool s6b_str_in_flight; /* Waiting for S6B CCA */
         uint32_t s6b_sta_err; /* S6B CCA RXed error code */
+        bool nextranet_aaa_auth_in_flight; /* Waiting for Nextranet AAA Auth */
     } sm_data;
 
     bool            epc;            /**< EPC or 5GC */
@@ -493,6 +497,10 @@ typedef struct smf_sess_s {
         char *name;
         char *realm;
     } aaa_server_identifier;
+
+    /* Nextranet AAA Configuration */
+    char                *nextranet_aaa_host;
+    bool                nextranet_auth_success;
 
     /* Data Forwarding between the CP and UP functions */
     ogs_pfcp_pdr_t  *cp2up_pdr;

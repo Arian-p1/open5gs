@@ -468,6 +468,17 @@ int smf_context_parse_config(void)
                                 ogs_warn("unknown key `%s`", fd_key);
                         }
                     }
+                } else if (!strcmp(smf_key, "nextranet")) {
+                    ogs_yaml_iter_t nextranet_iter;
+                    ogs_yaml_iter_recurse(&smf_iter, &nextranet_iter);
+                    while (ogs_yaml_iter_next(&nextranet_iter)) {
+                        const char *nextranet_key = ogs_yaml_iter_key(&nextranet_iter);
+                        ogs_assert(nextranet_key);
+                        if (!strcmp(nextranet_key, "aaa_host")) {
+                            self.nextranet_aaa_host = ogs_yaml_iter_value(&nextranet_iter);
+                            ogs_info("[NEXTRANET-AAA-DEBUG] Nextranet AAA Host setting from config: %s", self.nextranet_aaa_host);
+                        }
+                    }
                 } else if (!strcmp(smf_key, "ctf")) {
                     ogs_yaml_iter_t ctf_iter;
                     yaml_node_t *node =
@@ -1253,6 +1264,17 @@ smf_sess_t *smf_sess_add_by_apn(smf_ue_t *smf_ue, char *apn, uint8_t rat_type)
 
     /* Set EPC */
     sess->epc = true;
+
+    /* Nextranet AAA Host */
+    if (self.nextranet_aaa_host) {
+        ogs_info("[NEXTRANET-AAA-DEBUG] Global config has Nextranet AAA Host: %s", 
+                self.nextranet_aaa_host);
+        sess->nextranet_aaa_host = ogs_strdup(self.nextranet_aaa_host);
+        ogs_info("[NEXTRANET-AAA-DEBUG] Session assigned Nextranet AAA Host: %s", 
+                sess->nextranet_aaa_host);
+    } else {
+        ogs_error("[NEXTRANET-AAA-DEBUG] No Nextranet AAA Host configured in global config");
+    }
 
     memset(&e, 0, sizeof(e));
     e.sess_id = sess->id;

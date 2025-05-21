@@ -16,25 +16,24 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 libdiameter_nextranet_aaa_sources = files('''
-    ogs-diameter-nextranet-aaa.h
-    
-    message.h
-
     dict.c
     message.c
 '''.split())
 
 libdiameter_nextranet_aaa_inc = include_directories('.')
 
-libdiameter_nextranet_aaa = library('ogsdiameter-nextranet-aaa',
+libdiameter_nextranet_aaa = static_library('diameter_nextranet_aaa',
     sources : libdiameter_nextranet_aaa_sources,
-    version : libogslib_version,
     c_args : libdiameter_common_cc_flags,
-    include_directories : libdiameter_nextranet_aaa_inc,
-    dependencies : libdiameter_common_dep,
-    install : true)
+    include_directories : [libdiameter_nextranet_aaa_inc,
+                          libdiameter_common_inc],
+    dependencies : [libdiameter_common_dep,
+                    libfdcore_dep],
+    install : false)
 
 libdiameter_nextranet_aaa_dep = declare_dependency(
     link_with : libdiameter_nextranet_aaa,
-    include_directories : libdiameter_nextranet_aaa_inc,
-    dependencies : libdiameter_common_dep) 
+    include_directories : [libdiameter_nextranet_aaa_inc,
+                          libdiameter_common_inc],
+    dependencies : [libdiameter_common_dep,
+                   libfdcore_dep]) 

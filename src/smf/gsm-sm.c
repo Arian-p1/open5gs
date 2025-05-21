@@ -35,6 +35,22 @@
 #include "pfcp-path.h"
 #include "ngap-path.h"
 #include "fd-path.h"
+#include "nextranet-aaa-path.h"
+
+/*
+ * Helper function to ensure Nextranet AAA host is always set
+ * This hardcodes the AAA host value if not already set
+ */
+static void ensure_nextranet_aaa_host(smf_sess_t *sess) 
+{
+    ogs_assert(sess);
+    
+    if (!sess->nextranet_aaa_host) {
+        sess->nextranet_aaa_host = ogs_strdup("aaa-server.localdomain");
+        ogs_assert(sess->nextranet_aaa_host);
+        ogs_info("[NEXTRANET-AAA-DEBUG] AAA host hardcoded to %s", sess->nextranet_aaa_host);
+    }
+}
 
 static uint8_t gtp_cause_from_diameter(uint8_t gtp_version,
         const uint32_t dia_err, const uint32_t *dia_exp_err)
@@ -91,6 +107,27 @@ static void send_gtp_delete_err_msg(const smf_sess_t *sess,
 static bool send_ccr_init_req_gx_gy(smf_sess_t *sess, ogs_gtp_xact_t *gtp_xact)
 {
     int use_gy = smf_use_gy_iface();
+
+    /* Log whether Nextranet AAA host is configured */
+    ogs_info("[NEXTRANET-AAA-DEBUG] UE connecting - checking Nextranet AAA config: host='%s'", 
+        sess->nextranet_aaa_host ? sess->nextranet_aaa_host : "not configured");
+
+    /* Check if Nextranet AAA authentication is required */
+    if (sess->nextranet_aaa_host) {
+        ogs_info("[NEXTRANET-AAA-DEBUG] Session requires Nextranet AAA authentication, sending AAR to host '%s'", 
+                 sess->nextranet_aaa_host);
+        int rv = smf_nextranet_aaa_send_auth_request(sess);
+        if (rv != OGS_OK) {
+            ogs_error("[NEXTRANET-AAA-DEBUG] Failed to send Nextranet AAA Auth Request, rv=%d", rv);
+            return false;
+        }
+        ogs_info("[NEXTRANET-AAA-DEBUG] Nextranet AAA Auth Request sent successfully to '%s'", 
+                 sess->nextranet_aaa_host);
+        /* Set the flag to indicate we're waiting for Nextranet AAA response */
+        sess->sm_data.nextranet_aaa_auth_in_flight = true;
+    } else {
+        ogs_info("[NEXTRANET-AAA-DEBUG] Nextranet AAA authentication not configured for this session");
+    }
 
     if (use_gy == -1) {
         ogs_error("No Gy Diameter Peer");
@@ -194,6 +231,26 @@ void smf_gsm_state_initial(ogs_fsm_t *s, smf_event_t *e)
         sess->sm_data.s6b_aaa_err = ER_DIAMETER_SUCCESS;
         sess->sm_data.gx_cca_init_err = ER_DIAMETER_SUCCESS;
         sess->sm_data.gy_cca_init_err = ER_DIAMETER_SUCCESS;
+        
+        /* Initialize Nextranet AAA auth success to false */
+        sess->nextranet_auth_success = false;
+        /* Initialize Nextranet AAA auth in-flight to false */
+        sess->sm_data.nextranet_aaa_auth_in_flight = false;
+        
+        /* Always ensure AAA host is set */
+        ensure_nextranet_aaa_host(sess);
+        
+        /* Always trigger Nextranet AAA authentication */
+        ogs_info("[NEXTRANET-AAA-DEBUG] GSM: Triggering authentication in initial state with host: %s",
+                 sess->nextranet_aaa_host);
+        
+        if (smf_nextranet_aaa_send_auth_request(sess) < 0) {
+            ogs_error("[NEXTRANET-AAA-DEBUG] Failed to send AAA auth request, but continuing session processing");
+            /* Continue without crashing - just mark auth as not in flight */
+            sess->sm_data.nextranet_aaa_auth_in_flight = false;
+        } else {
+            sess->sm_data.nextranet_aaa_auth_in_flight = true;
+        }
         break;
 
     case OGS_FSM_EXIT_SIG:
@@ -355,15 +412,13 @@ void smf_gsm_state_initial(ogs_fsm_t *s, smf_event_t *e)
 
 void smf_gsm_state_wait_epc_auth_initial(ogs_fsm_t *s, smf_event_t *e)
 {
-    smf_sess_t *sess = NULL;
-
-    ogs_diam_s6b_message_t *s6b_message = NULL;
-    ogs_diam_gy_message_t *gy_message = NULL;
-    ogs_diam_gx_message_t *gx_message = NULL;
     uint32_t diam_err;
-    bool need_gy_terminate = false;
-
+    smf_sess_t *sess = NULL;
+    ogs_diam_s6b_message_t *s6b_message = NULL;
+    ogs_diam_gx_message_t *gx_message = NULL;
+    ogs_diam_gy_message_t *gy_message = NULL;
     ogs_gtp_xact_t *gtp_xact = NULL;
+    bool need_gy_terminate = false;
 
     ogs_assert(s);
     ogs_assert(e);
@@ -374,6 +429,19 @@ void smf_gsm_state_wait_epc_auth_initial(ogs_fsm_t *s, smf_event_t *e)
     ogs_assert(sess);
 
     switch (e->h.id) {
+    case OGS_FSM_ENTRY_SIG:
+        break;
+    case OGS_FSM_EXIT_SIG:
+        break;
+        
+    /* Add a case to handle Nextranet AAA authentication messages */
+    case SMF_EVT_NEXTRANET_AAA_MESSAGE:
+        ogs_info("[NEXTRANET-AAA-DEBUG] Received AAA authentication result message");
+        sess->sm_data.nextranet_aaa_auth_in_flight = false;
+        gtp_xact = ogs_gtp_xact_find_by_id(e->gtp_xact_id);
+        goto test_can_proceed;
+        
+
     case SMF_EVT_S6B_MESSAGE:
         s6b_message = e->s6b_message;
         ogs_assert(s6b_message);
@@ -434,10 +502,11 @@ void smf_gsm_state_wait_epc_auth_initial(ogs_fsm_t *s, smf_event_t *e)
     return;
 
 test_can_proceed:
-    /* First wait for both Gx and Gy requests to be done: */
+    /* First wait for all authentication/authorization requests to complete: */
     if (!sess->sm_data.s6b_aar_in_flight &&
         !sess->sm_data.gx_ccr_init_in_flight &&
-        !sess->sm_data.gy_ccr_init_in_flight) {
+        !sess->sm_data.gy_ccr_init_in_flight &&
+        !sess->sm_data.nextranet_aaa_auth_in_flight) {
         diam_err = ER_DIAMETER_SUCCESS;
         if (sess->sm_data.s6b_aaa_err != ER_DIAMETER_SUCCESS)
             diam_err = sess->sm_data.s6b_aaa_err;
@@ -445,6 +514,21 @@ test_can_proceed:
             diam_err = sess->sm_data.gx_cca_init_err;
         if (sess->sm_data.gy_cca_init_err != ER_DIAMETER_SUCCESS)
             diam_err = sess->sm_data.gy_cca_init_err;
+        
+        /* Ensure AAA host is set */
+        ensure_nextranet_aaa_host(sess);
+        /* Check Nextranet AAA authentication result */
+        if (
+            !sess->nextranet_auth_success) {
+            ogs_error("[NEXTRANET-AAA] Authentication failed or not completed - terminating session");
+            /* Use UE_NOT_AUTHORISED error since we're failing due to AAA authentication */
+            uint8_t gtp_cause = (gtp_xact->gtp_version == 1) ?
+                OGS_GTP1_CAUSE_NO_RESOURCES_AVAILABLE :
+                OGS_GTP2_CAUSE_UE_NOT_AUTHORISED_BY_OCS_OR_EXTERNAL_AAA_SERVER;
+            send_gtp_create_err_msg(sess, gtp_xact, gtp_cause);
+            OGS_FSM_TRAN(s, smf_gsm_state_exception);
+            return;
+        }
 
         if (diam_err == ER_DIAMETER_SUCCESS) {
             OGS_FSM_TRAN(s, smf_gsm_state_wait_pfcp_establishment);
@@ -471,6 +555,7 @@ test_can_proceed:
             uint8_t gtp_cause = gtp_cause_from_diameter(
                                     gtp_xact->gtp_version, diam_err, NULL);
             send_gtp_create_err_msg(sess, gtp_xact, gtp_cause);
+            OGS_FSM_TRAN(s, smf_gsm_state_exception);
         }
     }
 }
@@ -821,6 +906,22 @@ void smf_gsm_state_operational(ogs_fsm_t *s, smf_event_t *e)
 
     sess = smf_sess_find_by_id(e->sess_id);
     ogs_assert(sess);
+
+    /* Always ensure AAA host is set and add debug notification when entering operational state */
+    ensure_nextranet_aaa_host(sess);
+    ogs_info("[NEXTRANET-AAA-DEBUG] GSM: Session entered operational state with Nextranet AAA host: %s",
+             sess->nextranet_aaa_host);
+    
+    /* If not yet authenticated, send auth request */
+    if (!sess->sm_data.nextranet_aaa_auth_in_flight && !sess->nextranet_auth_success) {
+        ogs_info("[NEXTRANET-AAA-DEBUG] GSM: Triggering authentication in operational state");
+        if (smf_nextranet_aaa_send_auth_request(sess) < 0) {
+            ogs_error("[NEXTRANET-AAA-DEBUG] Failed to send AAA auth request in operational state");
+            /* Continue without crashing - just don't mark auth as in flight */
+        } else {
+            sess->sm_data.nextranet_aaa_auth_in_flight = true;
+        }
+    }
 
     switch (e->h.id) {
     case OGS_FSM_ENTRY_SIG:
@@ -1618,6 +1719,12 @@ void smf_gsm_state_wait_epc_auth_release(ogs_fsm_t *s, smf_event_t *e)
         sess->sm_data.gx_cca_term_err = ER_DIAMETER_SUCCESS;
         sess->sm_data.gy_cca_term_err = ER_DIAMETER_SUCCESS;
         sess->sm_data.s6b_sta_err = ER_DIAMETER_SUCCESS;
+        
+        /* Send Nextranet AAA termination request if needed */
+        if (sess->nextranet_aaa_host && strlen(sess->nextranet_aaa_host) > 0) {
+            ogs_info("[NEXTRANET-AAA-DEBUG] GSM: Sending termination request from wait_epc_auth_release");
+            smf_nextranet_aaa_send_term_request(sess);
+        }
         break;
 
     case SMF_EVT_GN_MESSAGE:
@@ -2155,6 +2262,11 @@ void smf_gsm_state_5gc_session_will_deregister(ogs_fsm_t *s, smf_event_t *e)
 
     switch (e->h.id) {
     case OGS_FSM_ENTRY_SIG:
+        /* Send Nextranet AAA termination request if needed */
+        if (sess->nextranet_aaa_host && strlen(sess->nextranet_aaa_host) > 0) {
+            ogs_info("[NEXTRANET-AAA-DEBUG] GSM: Sending termination request for 5G session from 5gc_session_will_deregister");
+            smf_nextranet_aaa_send_term_request(sess);
+        }
         break;
 
     case OGS_FSM_EXIT_SIG:

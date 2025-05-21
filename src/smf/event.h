@@ -51,6 +51,7 @@ typedef enum {
     SMF_EVT_GN_MESSAGE,
     SMF_EVT_GX_MESSAGE,
     SMF_EVT_GY_MESSAGE,
+    SMF_EVT_NEXTRANET_AAA_MESSAGE,
 
     SMF_EVT_N4_MESSAGE,
     SMF_EVT_N4_TIMER,
@@ -106,7 +107,11 @@ OGS_STATIC_ASSERT(OGS_EVENT_SIZE >= sizeof(smf_event_t));
 
 smf_event_t *smf_event_new(int id);
 
+void smf_event_free(smf_event_t *e);
+
 const char *smf_event_get_name(smf_event_t *e);
+
+void smf_event_send(smf_event_t *e);
 
 #ifdef __cplusplus
 }

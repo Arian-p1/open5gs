@@ -17,6 +17,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "ogs-app.h"
 #include "event.h"
 
 smf_event_t *smf_event_new(int id)
@@ -53,6 +54,8 @@ const char *smf_event_get_name(smf_event_t *e)
         return "SMF_EVT_GX_MESSAGE";
     case SMF_EVT_GY_MESSAGE:
         return "SMF_EVT_GY_MESSAGE";
+    case SMF_EVT_NEXTRANET_AAA_MESSAGE:
+        return "SMF_EVT_NEXTRANET_AAA_MESSAGE";
     case SMF_EVT_N4_MESSAGE:
         return "SMF_EVT_N4_MESSAGE";
     case SMF_EVT_N4_TIMER:
@@ -83,4 +86,10 @@ const char *smf_event_get_name(smf_event_t *e)
 
     ogs_error("Unknown Event[%d]", e->h.id);
     return "UNKNOWN_EVENT";
+}
+
+void smf_event_send(smf_event_t *e)
+{
+    ogs_assert(e);
+    ogs_queue_push(ogs_app()->queue, e);
 }

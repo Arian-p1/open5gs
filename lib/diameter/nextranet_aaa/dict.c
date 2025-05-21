@@ -106,8 +106,8 @@ int ogs_dict_nextranet_aaa_entry(char *conffile)
     {
       struct dict_object * cmd;
       struct dict_cmd_data data = { 
-        OGS_DIAM_NEXTRANET_AAA_CMD_CODE, /* Code */
-        "Nextranet-AAA-Auth-Request", /* Name */
+        OGS_DIAM_NEXTRANET_AAA_CMD_CODE_AUTH, /* Code */
+        "Nextranet-Authentication-Request", /* Name */
         CMD_FLAG_REQUEST, /* Fixed flags */
         CMD_FLAG_REQUEST, /* Fixed flag values */
       };
@@ -118,8 +118,32 @@ int ogs_dict_nextranet_aaa_entry(char *conffile)
     {
       struct dict_object * cmd;
       struct dict_cmd_data data = { 
-        OGS_DIAM_NEXTRANET_AAA_CMD_CODE, /* Code */
-        "Nextranet-AAA-Auth-Answer", /* Name */
+        OGS_DIAM_NEXTRANET_AAA_CMD_CODE_AUTH, /* Code */
+        "Nextranet-Authentication-Answer", /* Name */
+        CMD_FLAG_REQUEST, /* Fixed flags */
+        0, /* Fixed flag values */
+      };
+      CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_COMMAND, &data, NULL, &cmd));
+    }
+    
+    /* Nextranet-AAA-Term-Request command */
+    {
+      struct dict_object * cmd;
+      struct dict_cmd_data data = { 
+        OGS_DIAM_NEXTRANET_AAA_CMD_CODE_TERM, /* Code */
+        "Nextranet-Session-Termination-Request", /* Name */
+        CMD_FLAG_REQUEST, /* Fixed flags */
+        CMD_FLAG_REQUEST, /* Fixed flag values */
+      };
+      CHECK_FCT(fd_dict_new(fd_g_config->cnf_dict, DICT_COMMAND, &data, NULL, &cmd));
+    }
+    
+    /* Nextranet-AAA-Term-Answer command */
+    {
+      struct dict_object * cmd;
+      struct dict_cmd_data data = { 
+        OGS_DIAM_NEXTRANET_AAA_CMD_CODE_TERM, /* Code */
+        "Nextranet-Session-Termination-Answer", /* Name */
         CMD_FLAG_REQUEST, /* Fixed flags */
         0, /* Fixed flag values */
       };
@@ -137,7 +161,7 @@ int ogs_dict_nextranet_aaa_entry(char *conffile)
         "Nextranet-AVP-Result", /* Name */
         AVP_FLAG_VENDOR | AVP_FLAG_MANDATORY, /* Fixed flags */
         AVP_FLAG_VENDOR | AVP_FLAG_MANDATORY, /* Fixed flag values */
-        AVP_TYPE_OCTETSTRING /* base type of data */
+        AVP_TYPE_UNSIGNED32 /* base type of data */
       };
       CHECK_dict_new(DICT_AVP, &data, NULL, NULL);
     }

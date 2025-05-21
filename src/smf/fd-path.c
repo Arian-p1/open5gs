@@ -17,52 +17,66 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "context.h"
 #include "fd-path.h"
+#include "nextranet-aaa-path.h"
 
 int smf_fd_init(void)
 {
     int rv;
 
+    ogs_info("[FD-PATH] Initializing FreeDiameter");
+
     if (smf_self()->diam_conf_path == NULL &&
         (smf_self()->diam_config->cnf_diamid == NULL ||
         smf_self()->diam_config->cnf_diamrlm == NULL ||
         smf_self()->diam_config->cnf_addr == NULL)) {
-        ogs_warn("No diameter configuration");
-        return OGS_OK;
+        ogs_error("No diameter configuration");
+        return OGS_ERROR;
     }
 
     rv = ogs_diam_init(FD_MODE_CLIENT|FD_MODE_SERVER,
                 smf_self()->diam_conf_path, smf_self()->diam_config);
     ogs_assert(rv == 0);
 
+    ogs_info("[FD-PATH] Initialize PCRF interface");
     rv = smf_gx_init();
     ogs_assert(rv == OGS_OK);
 
+    ogs_info("[FD-PATH] Initialize OCS interface");
     rv = smf_gy_init();
     ogs_assert(rv == OGS_OK);
 
     rv = ogs_diam_rx_init();
     ogs_assert(rv == 0);
+    
+    /* Initialize S6B interface */
+    ogs_info("[FD-PATH] Initialize S6B interface");
     rv = smf_s6b_init();
     ogs_assert(rv == OGS_OK);
-    rv = smf_nextranet_aaa_init();
-    ogs_assert(rv == OGS_OK);
+
+    /* Initialize Nextranet AAA interface if configuration exists */
+    if (smf_self()->nextranet_aaa_host) {
+        ogs_info("[FD-PATH] Initialize Nextranet AAA interface");
+        rv = smf_nextranet_aaa_init();
+        if (rv != OGS_OK) {
+            ogs_error("[FD-PATH] Failed to initialize Nextranet AAA interface: %d", rv);
+            return rv;
+        }
+        ogs_info("[FD-PATH] Nextranet AAA interface initialized successfully");
+    } else {
+        ogs_info("[FD-PATH] Nextranet AAA interface not configured, skipping initialization");
+    }
 
     rv = ogs_diam_start();
     ogs_assert(rv == 0);
 
+    ogs_info("[FD-PATH] FreeDiameter initialization complete");
     return OGS_OK;
 }
 
 void smf_fd_final(void)
 {
-    if (smf_self()->diam_conf_path == NULL &&
-        (smf_self()->diam_config->cnf_diamid == NULL ||
-        smf_self()->diam_config->cnf_diamrlm == NULL ||
-        smf_self()->diam_config->cnf_addr == NULL)) {
-        return;
-    }
-
     smf_gx_final();
     smf_gy_final();
     smf_s6b_final();

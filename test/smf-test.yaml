@@ -1,0 +1,20 @@
+smf:
+  freeDiameter:
+    identity: smf.localdomain
+    realm: localdomain
+    port: 3868
+    listen_on: 127.0.0.1
+  nextranet:
+    aaa_host: aaa.nextranet.com
+  gtpc:
+    - addr: 127.0.0.1
+  pfcp:
+    - addr: 127.0.0.1
+  dns:
+    - 8.8.8.8
+    - 8.8.4.4
+  ue_pool:
+    - addr: 10.45.0.1/16
+  sbi:
+    addr: 127.0.0.1
+    port: 7777 
