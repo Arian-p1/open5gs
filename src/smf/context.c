@@ -1276,11 +1276,15 @@ smf_sess_t *smf_sess_add_by_apn(smf_ue_t *smf_ue, char *apn, uint8_t rat_type)
         ogs_error("[NEXTRANET-AAA-DEBUG] No Nextranet AAA Host configured in global config");
     }
 
+    ogs_info("[NEXTRANET-AAA-DEBUG] Setting UE ID %d for session (ID:%d) in smf_sess_add_by_apn", 
+             smf_ue->id, sess->index);
+    sess->smf_ue_id = smf_ue->id;
+    ogs_info("[NEXTRANET-AAA-DEBUG] UE ID set, now initializing FSM for session (ID:%d)", sess->index);
+
     memset(&e, 0, sizeof(e));
     e.sess_id = sess->id;
     ogs_fsm_init(&sess->sm, smf_gsm_state_initial, smf_gsm_state_final, &e);
-
-    sess->smf_ue_id = smf_ue->id;
+    ogs_info("[NEXTRANET-AAA-DEBUG] FSM initialization complete for session (ID:%d)", sess->index);
 
     ogs_list_add(&smf_ue->sess_list, sess);
 
@@ -1493,11 +1497,15 @@ smf_sess_t *smf_sess_add_by_psi(smf_ue_t *smf_ue, uint8_t psi)
     /* Set Charging Id */
     sess->charging.id = sess->index;
 
+    ogs_info("[NEXTRANET-AAA-DEBUG] Setting UE ID %d for session (ID:%d) in smf_sess_add_by_psi", 
+             smf_ue->id, sess->index);
+    sess->smf_ue_id = smf_ue->id;
+    ogs_info("[NEXTRANET-AAA-DEBUG] UE ID set, now initializing FSM for session (ID:%d)", sess->index);
+
     memset(&e, 0, sizeof(e));
     e.sess_id = sess->id;
     ogs_fsm_init(&sess->sm, smf_gsm_state_initial, smf_gsm_state_final, &e);
-
-    sess->smf_ue_id = smf_ue->id;
+    ogs_info("[NEXTRANET-AAA-DEBUG] FSM initialization complete for session (ID:%d)", sess->index);
 
     ogs_list_add(&smf_ue->sess_list, sess);
 

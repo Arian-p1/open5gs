@@ -237,11 +237,15 @@ int smf_nextranet_aaa_send_auth_request(smf_sess_t *sess)
     }
     
     /* Find UE context - don't crash if not found */
+    ogs_info("[NEXTRANET-AAA-DEBUG] Looking up UE with ID: %d for session (ID:%d)", 
+             sess->smf_ue_id, sess->index);
     smf_ue = smf_ue_find_by_id(sess->smf_ue_id);
     if (!smf_ue) {
-        ogs_error("[NEXTRANET-AAA-DEBUG] Cannot find UE for session (ID:%d)", sess->index);
+        ogs_error("[NEXTRANET-AAA-DEBUG] Cannot find UE for session (ID:%d), UE ID was: %d", 
+                  sess->index, sess->smf_ue_id);
         return -1;
     }
+    ogs_info("[NEXTRANET-AAA-DEBUG] Successfully found UE context for session (ID:%d)", sess->index);
     
     ogs_info("[NEXTRANET-AAA-DEBUG] *** CALLED Auth-Request for IMSI:%s, host='%s' ***", 
              smf_ue->imsi_bcd, sess->nextranet_aaa_host ? sess->nextranet_aaa_host : "NULL");
